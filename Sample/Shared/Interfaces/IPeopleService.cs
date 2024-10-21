@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Shared.Interfaces
 {
-    [RequireAuthorization("user")]
+    //[RequireAuthorization("user")]
     public interface IPeopleService
     {
         [Get("/people")]
@@ -28,7 +28,7 @@ namespace Shared.Interfaces
         [Post("/people/person")]
         Task CreatePerson([Body] Person person);
 
-        [RequireAuthorization("admin")]
+        //[RequireAuthorization("admin")]
         [Delete("/people/person/{id}")]
         Task DeletePerson([AliasAs("id")] string id);
 
