@@ -1,0 +1,180 @@
+﻿@page "/people"
+@rendermode InteractiveServer
+@using Shared.Interfaces
+@using Shared.Models
+
+<PageTitle>People</PageTitle>
+
+<h1>People</h1>
+
+<p>This component demonstrates showing data.</p>
+
+<EditForm Model="SearchModel" OnSubmit="Search" FormName="SearchForm">
+    <div class="d-flex">
+        <div class="p-2">
+            First Name:
+            <InputText @bind-Value="SearchModel!.FirstName" />
+        </div>
+
+        <div class="p-2">
+            Last Name:
+            <InputText @bind-Value="SearchModel!.LastName" />
+        </div>
+
+        <div class="p-2">
+            Company:
+            <InputText @bind-Value="SearchModel!.Company" />
+        </div>
+
+        <div class="p-2">
+            <button type="submit" class="btn btn-secondary">Search</button>
+        </div>
+
+        <div class="p-2">
+            <button type="reset" class="btn btn-secondary" @onclick="ResetSearch">X</button>
+        </div>
+    </div>
+</EditForm>
+
+
+@if (!PeopleList?.Any() == true)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Company</th>
+                <th></th>
+            </tr>
+
+        </thead>
+        <tbody>
+            
+            @foreach (var person in PeopleList)
+            {
+                <tr>
+                    <td>@person.FirstName</td>
+                    <td>@person.LastName</td>
+                    <td>@person.Company</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="(() => Delete(person.Id))">delete</button>
+                        <button class="btn btn-primary" @onclick="(() => Edit(person))">edit</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if(Model != null)
+{
+    <EditForm Model="Model" OnSubmit="Submit" FormName="Starship1">
+        <div>
+            <label>
+                First Name:
+                <InputText @bind-Value="Model!.FirstName" />
+            </label>
+
+            <label>
+                Last Name:
+                <InputText @bind-Value="Model!.LastName" />
+            </label>
+
+            <label>
+                Company:
+                <InputText @bind-Value="Model!.Company" />
+            </label>
+        </div>
+        <div>
+            <button type="submit">Submit</button>
+            <button type="reset" @onclick="Reset">Cancel</button>
+        </div>
+    </EditForm>
+}
+else
+{
+    <button class="btn btn-primary" @onclick="New">add new</button>
+}
+
+
+
+@code {
+    [Inject] public IPeopleService PeopleService { get; set; }
+
+    private List<Person> PeopleList = new();
+
+    [SupplyParameterFromForm]
+    private Person? Model { get; set; }
+
+    [SupplyParameterFromForm]
+    private Person? SearchModel { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshData();
+    }
+
+    private async Task RefreshData()
+    {
+        PeopleList = (await PeopleService.GetPeople()).ToList();
+        StateHasChanged();
+    }
+
+    private async Task Delete(string id)
+    {
+        await PeopleService.DeletePerson(id);
+        await RefreshData();
+    }
+
+    private void Reset()
+    {
+        Model = null;
+        StateHasChanged();
+    }
+
+    private void New()
+    {
+        Model = new();
+        StateHasChanged();
+    }
+
+    private void Edit(Person person)
+    {
+        Model = person;
+        StateHasChanged();
+    }
+
+    private async Task Submit()
+    {
+        if(string.IsNullOrEmpty(Model.Id))
+        {
+            await PeopleService.CreatePerson(Model);
+        }
+        else
+        {
+            await PeopleService.UpdatePerson(Model);
+        }
+
+        Model = null;
+
+        await RefreshData();
+    }
+
+    private async Task Search()
+    {
+        PeopleList = (await PeopleService.SearchPeople(SearchModel?.FirstName, SearchModel?.LastName, SearchModel?.Company)).ToList();
+        StateHasChanged();
+    }
+
+    private async Task ResetSearch()
+    {
+        SearchModel = new();
+        await Search();
+    }
+
+}
